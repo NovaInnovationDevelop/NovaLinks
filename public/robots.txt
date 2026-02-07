@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nlks.vercel.app/sitemap.xml

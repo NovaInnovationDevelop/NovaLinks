@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="google-site-verification" content="H9fQgf8np0Wt1VS91qWl6kgHqPT4JO0-7-7zPbvaDcw" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaLinks - Acortador de Enlaces</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+  /* Reset y base */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+body { background: #f8fafc; color: #333; }
+
+/* Header */
+header {
+  background: #4f46e5;
+  color: #fff;
+  padding: 20px 0;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+header h1 { font-weight: 600; font-size: 28px; }
+
+/* Main */
+main { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+
+/* Acortar enlace */
+.acortar-container {
+  background: #fff;
+  padding: 30px 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  text-align: center;
+}
+.acortar-container input[type="text"] {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+.acortar-container button {
+  padding: 14px 20px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  transition: background 0.3s;
+}
+.acortar-container button:hover { background: #4338ca; }
+
+/* Resultado principal */
+#resultado {
+  margin-top: 20px;
+  background: #fff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  word-break: break-all;
+}
+#resultado a { color: #4f46e5; text-decoration: none; font-weight: 500; }
+#resultado a:hover { text-decoration: underline; }
+.copy-btn-result {
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+.copy-btn-result:hover { background: #4338ca; }
+
+/* Mensaje copiado */
+.copied-msg {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 13px;
+  color: #16a34a;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.copied-msg.show { opacity: 1; }
+
+/* Info y lista de links */
+.info {
+  background: #fff;
+  padding: 25px;
+  margin-top: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+}
+.info h2 { font-size: 22px; margin-bottom: 15px; }
+.info p { font-size: 16px; line-height: 1.6; color: #555; }
+
+.links-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* Tarjetas de links */
+.link-card {
+  background: #fff;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  transition: transform 0.2s;
+}
+.link-card:hover { transform: translateY(-2px); }
+
+.link-card-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.link-info { font-size: 14px; color: #555; }
+.link-card a { color: #4f46e5; text-decoration: none; word-break: break-all; }
+.link-card a:hover { text-decoration: underline; }
+
+/* Botones de la tarjeta */
+.delete-btn {
+  background: #f87171;
+  color: #fff;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+.delete-btn:hover { background: #dc2626; }
+
+.copy-btn {
+  background: #4f46e5;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #fff;
+  margin-left: 6px;
+  transition: background 0.3s;
+}
+.copy-btn:hover { background: #4338ca; }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 20px 0;
+  background: #f1f5f9;
+  margin-top: 50px;
+  font-size: 14px;
+  color: #555;
+}
+footer a { color: #4f46e5; text-decoration: none; cursor: pointer; }
+footer a:hover { text-decoration: underline; }
+
+/* Modales */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.5);
+}
+.modal-content {
+  background-color: #fff;
+  margin: 10% auto;
+  padding: 25px 20px;
+  border-radius: 12px;
+  width: 90%; max-width: 500px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  position: relative;
+}
+.close {
+  position: absolute;
+  top: 12px; right: 15px;
+  color: #555;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.close:hover { color: #4f46e5; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  main { margin: 20px auto; }
+  .link-card { font-size: 13px; }
+  .copy-btn, .delete-btn { font-size: 11px; padding: 3px 6px; }
+  #resultado { flex-direction: column; gap: 8px; }
+  .copy-btn-result { width: 100%; text-align: center; margin-left: 0; margin-top: 8px; }
+}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>NovaLinks - Acortador de Enlaces</h1>
+</header>
+
+<main>
+  <div class="acortar-container">
+    <input type="text" id="link" placeholder="Ingresa tu enlace aquí">
+    <button id="acortar">Acortar Enlace</button>
+    <p id="resultado"></p>
+  </div>
+
+  <div class="info">
+  <h2>Mis Enlaces</h2>
+  <div id="myLinks" class="links-container"></div>
+</div>
+
+  <div class="info">
+    <h2>¿Cómo funciona?</h2>
+    <p>Ingresa cualquier enlace y nuestro sistema generará un código corto único que podrás compartir fácilmente.</p>
+    <h2>Beneficios</h2>
+    <p>- Comparte enlaces largos de forma simple y profesional.<br>- Mantén tus links organizados y fáciles de recordar.<br>- Compatible con cualquier dispositivo y navegador.</p>
+  </div>
+</main>
+
+<footer>
+  &copy; 2025 Nova Innovations | 
+  <a id="privacy-link">Política de Privacidad</a> | 
+  <a id="terms-link">Términos y Condiciones</a>
+</footer>
+
+<!-- Modal Política de Privacidad -->
+<div id="privacy-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="close-privacy">&times;</span>
+    <h2>Política de Privacidad</h2>
+    <p><strong>Fecha de entrada en vigencia:</strong> [Coloca la fecha]</p>
+
+<p>En <strong>[Nombre de tu web]</strong>, valoramos tu privacidad y nos comprometemos a proteger la información que compartes con nosotros. Esta política describe cómo recopilamos, usamos y protegemos tus datos.</p>
+
+<ol>
+  <li>
+    <strong>Información que recopilamos</strong>
+    <p><strong>Datos que proporcionas:</strong> Como dirección de correo electrónico (si la requieres para notificaciones) o información de contacto opcional.</p>
+    <p><strong>Datos automáticos:</strong> IP, navegador, tipo de dispositivo y actividad en nuestra página para mejorar el servicio y fines estadísticos.</p>
+  </li>
+
+  <li>
+    <strong>Uso de la información</strong>
+    <ul>
+      <li>Para ofrecer y mejorar nuestros servicios.</li>
+      <li>Para enviar notificaciones sobre cambios en el servicio o noticias importantes (solo si proporcionas correo).</li>
+      <li>Para análisis internos y mejorar la experiencia del usuario.</li>
+    </ul>
+  </li>
+
+  <li>
+    <strong>Compartir información</strong>
+    <p>No vendemos ni compartimos tus datos personales con terceros con fines comerciales. Podemos compartir datos con proveedores de servicios necesarios para el funcionamiento de la web, como servicios de hosting o analítica, cumpliendo con esta política.</p>
+  </li>
+
+  <li>
+    <strong>Cookies</strong>
+    <p>Utilizamos cookies para mejorar la experiencia en nuestra página. Estas cookies no recopilan información personal identificable. Puedes deshabilitarlas desde tu navegador, pero algunas funciones podrían no estar disponibles.</p>
+  </li>
+
+  <li>
+    <strong>Seguridad</strong>
+    <p>Implementamos medidas técnicas y administrativas para proteger tus datos. Sin embargo, no podemos garantizar seguridad absoluta en la transmisión de información por Internet.</p>
+  </li>
+
+  <li>
+    <strong>Enlaces a terceros</strong>
+    <p>Nuestro sitio puede contener enlaces a otras páginas. No somos responsables de las políticas de privacidad de estos sitios.</p>
+  </li>
+
+  <li>
+    <strong>Cambios en la política</strong>
+    <p>Nos reservamos el derecho de actualizar esta política. Las modificaciones se publicarán en esta página con la fecha actualizada.</p>
+  </li>
+
+  <li>
+    <strong>Contacto</strong>
+    <p>Si tienes dudas sobre esta política, puedes contactarnos a través de:</p>
+    <p>Correo: <a href="mailto:novadevelopment.innovations@gmail.com">novadevelopment.innovations@gmail.com</a></p>
+  </li>
+</ol>
+
+  </div>
+</div>
+
+<!-- Modal Términos y Condiciones -->
+<div id="terms-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="close-terms">&times;</span>
+    <h2>Términos y Condiciones</h2>
+    <p><strong>Fecha de entrada en vigencia:</strong> [Coloca la fecha]</p>
+
+<p>Al utilizar <strong>[Nombre de tu web]</strong>, aceptas estos términos y condiciones. Si no estás de acuerdo, no uses el sitio.</p>
+
+<ol>
+  <li>
+    <strong>Uso del servicio</strong>
+    <p>El servicio permite acortar enlaces para compartirlos fácilmente.</p>
+    <p>No debes utilizar el servicio para actividades ilegales, fraudulentas, o que violen derechos de terceros.</p>
+  </li>
+
+  <li>
+    <strong>Responsabilidad</strong>
+    <p>No nos hacemos responsables por el contenido de los enlaces acortados ni por el uso que terceros hagan de ellos.</p>
+    <p>No garantizamos que el servicio esté libre de errores o interrupciones.</p>
+  </li>
+
+  <li>
+    <strong>Propiedad intelectual</strong>
+    <p>El contenido de la página (diseño, logos, textos) es propiedad de <strong>[Nombre de tu web]</strong> y está protegido por la ley.</p>
+    <p>No puedes copiar, reproducir ni distribuir nuestro contenido sin autorización.</p>
+  </li>
+
+  <li>
+    <strong>Modificaciones del servicio</strong>
+    <p>Podemos suspender, modificar o interrumpir el servicio en cualquier momento sin previo aviso.</p>
+  </li>
+
+  <li>
+    <strong>Terminación</strong>
+    <p>Nos reservamos el derecho de restringir o cancelar tu acceso si violas estos términos.</p>
+  </li>
+
+  <li>
+    <strong>Legislación aplicable</strong>
+    <p>Estos términos se rigen por las leyes de <strong>[país]</strong>, y cualquier disputa se resolverá en los tribunales competentes de <strong>[ciudad/país]</strong>.</p>
+  </li>
+
+  <li>
+    <strong>Contacto</strong>
+    <p>Para consultas sobre estos términos, contáctanos en:</p>
+    <p>Correo: <a href="mailto:novadevelopment.innovations@gmail.com">novadevelopment.innovations@gmail.com</a></p>
+  </li>
+</ol>
+
+  </div>
+</div>
+
+<script type="module" src="script.js"></script>
+<script>
+  // Modales
+  const privacyLink = document.getElementById('privacy-link');
+  const termsLink = document.getElementById('terms-link');
+  const privacyModal = document.getElementById('privacy-modal');
+  const termsModal = document.getElementById('terms-modal');
+  const closePrivacy = document.getElementById('close-privacy');
+  const closeTerms = document.getElementById('close-terms');
+
+  privacyLink.addEventListener('click', e => { e.preventDefault(); privacyModal.style.display = 'block'; });
+  termsLink.addEventListener('click', e => { e.preventDefault(); termsModal.style.display = 'block'; });
+
+  closePrivacy.addEventListener('click', () => privacyModal.style.display = 'none');
+  closeTerms.addEventListener('click', () => termsModal.style.display = 'none');
+
+  window.addEventListener('click', e => {
+    if(e.target == privacyModal) privacyModal.style.display = 'none';
+    if(e.target == termsModal) termsModal.style.display = 'none';
+  });
+</script>
+
+</body>
+</html>

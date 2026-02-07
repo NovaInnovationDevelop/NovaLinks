@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Redirigiendo — NovaLinks</title>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8fafc; color:#111; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+    .card { background:#fff; padding:28px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.08); text-align:center; width:90%; max-width:420px; }
+    .title { font-size:18px; font-weight:600; margin-bottom:12px; }
+    .msg { color:#444; margin-bottom:16px; }
+    .loading { width:44px; height:44px; border:4px solid #4f46e5; border-top-color:transparent; border-radius:50%; margin:0 auto 14px; animation:spin 1s linear infinite; }
+    .error { color:#b91c1c; font-weight:600; }
+    .small { font-size:13px; color:#666; margin-top:10px; word-break:break-all; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    a.btn { display:inline-block; margin-top:10px; padding:10px 14px; background:#4f46e5; color:#fff; border-radius:8px; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="loading" id="spinner"></div>
+    <div class="title">Redirigiendo...</div>
+    <div class="msg" id="msg">Comprobando enlace</div>
+    <div class="small" id="debug" style="display:none;"></div>
+    <a class="btn" id="manual" style="display:none;" href="#">Abrir manual</a>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    // ---------- CONFIGURA ESTO ----------
+    const supabaseUrl = 'https://wnkkhnjywxrozdwcyhvp.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indua2tobmp5d3hyb3pkd2N5aHZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0OTEzNDEsImV4cCI6MjA3NDA2NzM0MX0.1ZC8xNqvDe8PI0vFT_12xAyn00WI_zM6sbNW2lYoE0E';
+
+    // -------------------------------------
+
+    const spinner = document.getElementById('spinner');
+    const msgEl = document.getElementById('msg');
+    const debugEl = document.getElementById('debug');
+    const manualBtn = document.getElementById('manual');
+
+    // inicializa supabase
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // obtiene el código: primero prueba query param "c", si no, usa el último segmento del pathname
+    function obtenerCodigo() {
+      const params = new URLSearchParams(window.location.search);
+      let code = params.get('c');
+      if (code) return code.trim();
+
+      // si no hay query param, intentar el pathname
+      // ejemplo pathname: "/abc123" o "/folder/abc123"
+      const path = window.location.pathname || '/';
+      const parts = path.split('/').filter(Boolean); // quita elementos vacíos
+      if (parts.length === 0) return null;
+
+      // si el último segmento es "redirect.html" (acceso directo), no hay código
+      const last = parts[parts.length - 1];
+      if (last.toLowerCase().endsWith('.html')) {
+        return null;
+      }
+      return decodeURIComponent(last).trim();
+    }
+
+  async function buscarYRedirigir(code) {
+  try {
+    msgEl.textContent = 'Buscando enlace...';
+    console.log('Código recibido:', code);
+
+    const cleanCode = code.trim();
+
+    const { data, error } = await supabase
+      .from('links')
+      .select('url, visits')
+      .eq('code', cleanCode)
+      .single();
+
+    console.log('Supabase response:', { data, error });
+
+    if (error || !data?.url) {
+      mostrarError('Enlace no encontrado.');
+      return;
+    }
+
+    // actualizar visitas directamente
+    const { data: updated, error: updateError } = await supabase
+       .from('links')
+       .update({ visits: (data.visits || 0) + 1 })
+       .eq('code', cleanCode)
+       .select('visits');
+
+    if (updateError) {
+      console.error('Error al actualizar visitas:', updateError);
+    } else {
+      console.log('Visitas actualizadas correctamente:', updated);
+    }
+
+    msgEl.textContent = 'Redirigiendo...';
+    window.location.replace(data.url);
+
+  } catch (err) {
+    console.error('Error de red:', err);
+    mostrarError('Error de red. Intenta de nuevo.');
+  }
+}
+    
+    function mostrarError(text) {
+      spinner.style.display = 'none';
+      msgEl.innerHTML = `<span class="error">${text}</span>`;
+      debugEl.style.display = 'block';
+      debugEl.textContent = `URL actual: ${window.location.href}`;
+      manualBtn.style.display = 'inline-block';
+      manualBtn.href = window.location.origin; // para que el usuario regrese al home
+    }
+
+    // flujo principal
+    (async function () {
+      const code = obtenerCodigo();
+      if (!code) {
+        mostrarError('Código no válido.');
+        return;
+      }
+
+      // opcional: mostrar el código en debug
+      debugEl.style.display = 'block';
+      debugEl.textContent = `Código detectado: ${code}`;
+
+      await buscarYRedirigir(code);
+    })();
+  </script>
+</body>
+</html>
