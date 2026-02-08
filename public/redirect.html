@@ -22,14 +22,12 @@
     <div class="title">Redirigiendo...</div>
     <div class="msg" id="msg">Comprobando enlace</div>
     <div class="small" id="debug" style="display:none;"></div>
-    <a class="btn" id="manual" style="display:none;" href="#">Abrir manual</a>
   </div>
 
   <script>
     const spinner = document.getElementById('spinner');
     const msgEl = document.getElementById('msg');
     const debugEl = document.getElementById('debug');
-    const manualBtn = document.getElementById('manual');
 
     const API_TIMEOUT = 8000; // ms
 
@@ -64,19 +62,12 @@
       msgEl.innerHTML = `<span class="error">${text}</span>`;
       debugEl.style.display = 'block';
       debugEl.textContent = details || `URL actual: ${window.location.href}`;
-      manualBtn.style.display = 'inline-block';
-      manualBtn.textContent = 'Ir al inicio';
-      manualBtn.href = window.location.origin;
     }
 
     function showManualLink(url) {
       setLoading(false, 'Enlace encontrado');
       debugEl.style.display = 'block';
       debugEl.innerHTML = `Destino: <a href="${url}" target="_blank" rel="noopener">${url}</a>`;
-      manualBtn.style.display = 'inline-block';
-      manualBtn.textContent = 'Abrir enlace';
-      manualBtn.href = url;
-      manualBtn.focus();
     }
 
     async function buscarYRedirigir(code) {
