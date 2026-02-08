@@ -6,233 +6,81 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NovaLinks - Acortador de Enlaces</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-  /* Reset y base */
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-body { background: #f8fafc; color: #333; }
-
-/* Header */
-header {
-  background: #4f46e5;
-  color: #fff;
-  padding: 20px 0;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-header h1 { font-weight: 600; font-size: 28px; }
-
-/* Main */
-main { max-width: 700px; margin: 40px auto; padding: 0 20px; }
-
-/* Acortar enlace */
-.acortar-container {
-  background: #fff;
-  padding: 30px 25px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-  text-align: center;
-}
-.acortar-container input[type="text"] {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  margin-bottom: 15px;
-}
-.acortar-container button {
-  padding: 14px 20px;
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  width: 100%;
-  transition: background 0.3s;
-}
-.acortar-container button:hover { background: #4338ca; }
-
-/* Resultado principal */
-#resultado {
-  margin-top: 20px;
-  background: #fff;
-  padding: 15px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  word-break: break-all;
-}
-#resultado a { color: #4f46e5; text-decoration: none; font-weight: 500; }
-#resultado a:hover { text-decoration: underline; }
-.copy-btn-result {
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-}
-.copy-btn-result:hover { background: #4338ca; }
-
-/* Mensaje copiado */
-.copied-msg {
-  display: inline-block;
-  margin-left: 10px;
-  font-size: 13px;
-  color: #16a34a;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.copied-msg.show { opacity: 1; }
-
-/* Info y lista de links */
-.info {
-  background: #fff;
-  padding: 25px;
-  margin-top: 40px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-}
-.info h2 { font-size: 22px; margin-bottom: 15px; }
-.info p { font-size: 16px; line-height: 1.6; color: #555; }
-
-.links-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-top: 10px;
-}
-
-/* Tarjetas de links */
-.link-card {
-  background: #fff;
-  padding: 15px 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-  transition: transform 0.2s;
-}
-.link-card:hover { transform: translateY(-2px); }
-
-.link-card-header {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.link-info { font-size: 14px; color: #555; }
-.link-card a { color: #4f46e5; text-decoration: none; word-break: break-all; }
-.link-card a:hover { text-decoration: underline; }
-
-/* Botones de la tarjeta */
-.delete-btn {
-  background: #f87171;
-  color: #fff;
-  border: none;
-  padding: 5px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.2s;
-}
-.delete-btn:hover { background: #dc2626; }
-
-.copy-btn {
-  background: #4f46e5;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #fff;
-  margin-left: 6px;
-  transition: background 0.3s;
-}
-.copy-btn:hover { background: #4338ca; }
-
-/* Footer */
-footer {
-  text-align: center;
-  padding: 20px 0;
-  background: #f1f5f9;
-  margin-top: 50px;
-  font-size: 14px;
-  color: #555;
-}
-footer a { color: #4f46e5; text-decoration: none; cursor: pointer; }
-footer a:hover { text-decoration: underline; }
-
-/* Modales */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  overflow: auto;
-  background-color: rgba(0,0,0,0.5);
-}
-.modal-content {
-  background-color: #fff;
-  margin: 10% auto;
-  padding: 25px 20px;
-  border-radius: 12px;
-  width: 90%; max-width: 500px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  position: relative;
-}
-.close {
-  position: absolute;
-  top: 12px; right: 15px;
-  color: #555;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-}
-.close:hover { color: #4f46e5; }
-
-/* Responsive */
-@media (max-width: 600px) {
-  main { margin: 20px auto; }
-  .link-card { font-size: 13px; }
-  .copy-btn, .delete-btn { font-size: 11px; padding: 3px 6px; }
-  #resultado { flex-direction: column; gap: 8px; }
-  .copy-btn-result { width: 100%; text-align: center; margin-left: 0; margin-top: 8px; }
-}
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
 <header>
-  <h1>NovaLinks - Acortador de Enlaces</h1>
+  <h1><i class="fas fa-link"></i> NovaLinks</h1>
 </header>
 
+<button id="theme-toggle" class="theme-toggle" title="Cambiar tema">🌙</button>
+
 <main>
-  <div class="acortar-container">
-    <input type="text" id="link" placeholder="Ingresa tu enlace aquí">
-    <button id="acortar">Acortar Enlace</button>
-    <p id="resultado"></p>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="crear">➕ Crear Enlace</button>
+    <button class="tab-btn" data-tab="mis-enlaces">📋 Mis Enlaces</button>
+    <button class="tab-btn" data-tab="acerca">ℹ️ Acerca de</button>
   </div>
 
-  <div class="info">
-  <h2>Mis Enlaces</h2>
-  <div id="myLinks" class="links-container"></div>
-</div>
+  <!-- Tab: Crear Enlace -->
+  <div id="crear" class="tab-content active">
+    <div class="acortar-container">
+      <h2 style="margin-bottom: 20px; color: var(--primary);">Crear Enlace Corto</h2>
+      <div class="input-group">
+        <input type="url" id="link" placeholder="https://ejemplo.com/url-muy-larga-aqui">
+        <button id="acortar"><i class="fas fa-magic"></i> Acortar</button>
+      </div>
+      <p id="resultado"></p>
+    </div>
+  </div>
 
-  <div class="info">
-    <h2>¿Cómo funciona?</h2>
-    <p>Ingresa cualquier enlace y nuestro sistema generará un código corto único que podrás compartir fácilmente.</p>
-    <h2>Beneficios</h2>
-    <p>- Comparte enlaces largos de forma simple y profesional.<br>- Mantén tus links organizados y fáciles de recordar.<br>- Compatible con cualquier dispositivo y navegador.</p>
+  <!-- Tab: Mis Enlaces -->
+  <div id="mis-enlaces" class="tab-content" style="display: none;">
+    <div class="info">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Mis Enlaces</h2>
+        <button id="export-btn" style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          <i class="fas fa-download"></i> Exportar
+        </button>
+      </div>
+      
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="🔍 Buscar enlaces...">
+        <select id="filter-select" class="filter-select">
+          <option value="all">Todos</option>
+          <option value="recent">Más Recientes</option>
+          <option value="popular">Más Visitados</option>
+          <option value="oldest">Más Antiguos</option>
+        </select>
+      </div>
+      
+      <div id="myLinks" class="links-container"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Acerca de -->
+  <div id="acerca" class="tab-content" style="display: none;">
+    <div class="info">
+      <h2><i class="fas fa-info-circle"></i> ¿Cómo funciona?</h2>
+      <p>Ingresa cualquier enlace largo y nuestro sistema generará un código corto único que podrás compartir fácilmente.</p>
+      
+      <h2 style="margin-top: 20px;"><i class="fas fa-star"></i> Beneficios</h2>
+      <ul style="margin-left: 20px; color: var(--text-light);">
+        <li>✨ Comparte enlaces largos de forma simple y profesional</li>
+        <li>📊 Visualiza estadísticas de visitas en tiempo real</li>
+        <li>🔗 Genera códigos QR para tus enlaces</li>
+        <li>💾 Exporta tus enlaces en CSV o JSON</li>
+        <li>🔍 Busca y filtra tus enlaces fácilmente</li>
+        <li>🌙 Modo oscuro disponible</li>
+      </ul>
+
+      <h2 style="margin-top: 20px;"><i class="fas fa-lock"></i> Privacidad y Seguridad</h2>
+      <p>Tus datos se almacenan de forma segura. Los enlaces expiran automáticamente después de 7 días.</p>
+    </div>
   </div>
 </main>
 
@@ -241,6 +89,34 @@ footer a:hover { text-decoration: underline; }
   <a id="privacy-link">Política de Privacidad</a> | 
   <a id="terms-link">Términos y Condiciones</a>
 </footer>
+
+<!-- Modal QR -->
+<div id="qr-modal" class="modal">
+  <div class="modal-content qr-modal-content">
+    <span class="close" id="close-qr">&times;</span>
+    <h2>Código QR</h2>
+    <div class="qr-code-container">
+      <img id="qr-img" src="" alt="QR Code">
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <label style="display: block; margin-bottom: 10px; font-weight: 600; color: var(--text-light);">
+        <i class="fas fa-file-image"></i> Selecciona formato de descarga:
+      </label>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+        <button onclick="downloadQR('png')" style="padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <i class="fas fa-image"></i> PNG
+        </button>
+        <button onclick="downloadQR('svg')" style="padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <i class="fas fa-file-code"></i> SVG
+        </button>
+        <button onclick="downloadQR('jpg')" style="padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <i class="fas fa-photo-video"></i> JPG
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal Política de Privacidad -->
 <div id="privacy-modal" class="modal">
@@ -356,26 +232,6 @@ footer a:hover { text-decoration: underline; }
 </div>
 
 <script type="module" src="script.js"></script>
-<script>
-  // Modales
-  const privacyLink = document.getElementById('privacy-link');
-  const termsLink = document.getElementById('terms-link');
-  const privacyModal = document.getElementById('privacy-modal');
-  const termsModal = document.getElementById('terms-modal');
-  const closePrivacy = document.getElementById('close-privacy');
-  const closeTerms = document.getElementById('close-terms');
-
-  privacyLink.addEventListener('click', e => { e.preventDefault(); privacyModal.style.display = 'block'; });
-  termsLink.addEventListener('click', e => { e.preventDefault(); termsModal.style.display = 'block'; });
-
-  closePrivacy.addEventListener('click', () => privacyModal.style.display = 'none');
-  closeTerms.addEventListener('click', () => termsModal.style.display = 'none');
-
-  window.addEventListener('click', e => {
-    if(e.target == privacyModal) privacyModal.style.display = 'none';
-    if(e.target == termsModal) termsModal.style.display = 'none';
-  });
-</script>
 
 </body>
 </html>
