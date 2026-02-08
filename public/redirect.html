@@ -31,77 +31,95 @@
     const debugEl = document.getElementById('debug');
     const manualBtn = document.getElementById('manual');
 
+    const API_TIMEOUT = 8000; // ms
+
     // obtiene el código: primero prueba query param "c", si no, usa el último segmento del pathname
     function obtenerCodigo() {
       const params = new URLSearchParams(window.location.search);
       let code = params.get('c');
       if (code) return code.trim();
 
-      // si no hay query param, intentar el pathname
-      // ejemplo pathname: "/abc123" o "/folder/abc123"
       const path = window.location.pathname || '/';
-      const parts = path.split('/').filter(Boolean); // quita elementos vacíos
+      const parts = path.split('/').filter(Boolean);
       if (parts.length === 0) return null;
-
-      // si el último segmento es "redirect.html" (acceso directo), no hay código
       const last = parts[parts.length - 1];
-      if (last.toLowerCase().endsWith('.html')) {
-        return null;
-      }
+      if (last.toLowerCase().endsWith('.html')) return null;
       return decodeURIComponent(last).trim();
+    }
+
+    function fetchWithTimeout(url, opts = {}, timeout = API_TIMEOUT) {
+      return Promise.race([
+        fetch(url, opts),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('Tiempo de espera agotado')), timeout))
+      ]);
+    }
+
+    function setLoading(loading, text = 'Comprobando enlace') {
+      spinner.style.display = loading ? 'block' : 'none';
+      msgEl.textContent = text;
+    }
+
+    function mostrarError(text, details = '') {
+      setLoading(false);
+      msgEl.innerHTML = `<span class="error">${text}</span>`;
+      debugEl.style.display = 'block';
+      debugEl.textContent = details || `URL actual: ${window.location.href}`;
+      manualBtn.style.display = 'inline-block';
+      manualBtn.textContent = 'Ir al inicio';
+      manualBtn.href = window.location.origin;
+    }
+
+    function showManualLink(url) {
+      setLoading(false, 'Enlace encontrado');
+      debugEl.style.display = 'block';
+      debugEl.innerHTML = `Destino: <a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+      manualBtn.style.display = 'inline-block';
+      manualBtn.textContent = 'Abrir enlace';
+      manualBtn.href = url;
+      manualBtn.focus();
     }
 
     async function buscarYRedirigir(code) {
       try {
-        msgEl.textContent = 'Buscando enlace...';
-        console.log('Código recibido:', code);
+        setLoading(true, 'Buscando enlace...');
 
         const cleanCode = code.trim();
 
-        // Llamar a la API para obtener el enlace
-        const response = await fetch('/api/supabase', {
+        const response = await fetchWithTimeout('/api/supabase', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'getByCode', code: cleanCode })
         });
 
-        if (!response.ok) throw new Error('Error al obtener enlace');
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `HTTP ${response.status}`);
+        }
+
         const data = await response.json();
 
-        console.log('API response:', data);
-
-        if (!data?.url) {
-          mostrarError('Enlace no encontrado.');
+        if (!data || !data.url) {
+          mostrarError('Enlace no encontrado.', `Código: ${cleanCode}`);
           return;
         }
 
-        // actualizar visitas llamando a la API
-        try {
-          await fetch('/api/supabase', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'incrementVisits', code: cleanCode })
-          });
-        } catch (err) {
-          console.error('Error al actualizar visitas:', err);
-        }
+        // Mostrar destino y redirigir tras breve delay para que usuario vea la confirmación
+        showManualLink(data.url);
 
-        msgEl.textContent = 'Redirigiendo...';
-        window.location.replace(data.url);
+        // Incrementar visitas en background (no bloquear)
+        fetch('/api/supabase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'incrementVisits', code: cleanCode })
+        }).catch(err => console.warn('Inc visits failed:', err));
+
+        // Redirigir después de 600ms
+        setTimeout(() => window.location.replace(data.url), 600);
 
       } catch (err) {
         console.error('Error de red:', err);
-        mostrarError('Error de red. Intenta de nuevo.');
+        mostrarError('No se pudo obtener el enlace.', err.message || String(err));
       }
-    }
-    
-    function mostrarError(text) {
-      spinner.style.display = 'none';
-      msgEl.innerHTML = `<span class="error">${text}</span>`;
-      debugEl.style.display = 'block';
-      debugEl.textContent = `URL actual: ${window.location.href}`;
-      manualBtn.style.display = 'inline-block';
-      manualBtn.href = window.location.origin; // para que el usuario regrese al home
     }
 
     // flujo principal
@@ -112,10 +130,8 @@
         return;
       }
 
-      // opcional: mostrar el código en debug
       debugEl.style.display = 'block';
       debugEl.textContent = `Código detectado: ${code}`;
-
       await buscarYRedirigir(code);
     })();
   </script>
