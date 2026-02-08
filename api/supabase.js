@@ -2,13 +2,13 @@
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-console.log('SUPABASE_URL:', supabaseUrl ? '✓ configurada' : '✗ NO configurada');
-console.log('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? '✓ configurada' : '✗ NO configurada');
+// No imprimir ni devolver valores sensibles. Si faltan, manejaremos en tiempo de petición.
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Error: Faltan variables de entorno');
-  throw new Error('Faltan variables de entorno: SUPABASE_URL o SUPABASE_SERVICE_KEY');
-}
+// ------ Rate limiting (básico, por IP) ------
+// Nota: implementación en memoria por instancia (apto para protección básica).
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
+const RATE_LIMIT_MAX_REQUESTS = 60; // por ventana
+const rateLimitMap = new Map();
 
 // Helper para llamar a la API REST de Supabase
 async function supabaseApi(method, table, filter = '', body = null) {
@@ -64,6 +64,36 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  // Rate limiting simple por IP
+  try {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded ? String(forwarded).split(',')[0].trim() : (req.socket && req.socket.remoteAddress) || req.connection?.remoteAddress || 'unknown';
+    const now = Date.now();
+    let entry = rateLimitMap.get(ip);
+    if (!entry || now > entry.reset) {
+      entry = { count: 1, reset: now + RATE_LIMIT_WINDOW_MS };
+      rateLimitMap.set(ip, entry);
+    } else {
+      entry.count += 1;
+      rateLimitMap.set(ip, entry);
+    }
+
+    if (entry.count > RATE_LIMIT_MAX_REQUESTS) {
+      const retryAfter = Math.ceil((entry.reset - now) / 1000);
+      res.setHeader('Retry-After', String(retryAfter));
+      return res.status(429).json({ error: 'Too Many Requests' });
+    }
+  } catch (err) {
+    // Si falla el rate limit por cualquier motivo, dejamos pasar la petición (no bloqueo crítico)
+    console.warn('Rate limit check failed:', err);
+  }
+
+  // Verificar variables de entorno en tiempo de petición (no en build)
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('SUPABASE_URL or SUPABASE_SERVICE_KEY not configured on server');
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 
   try {
@@ -133,11 +163,8 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Método no permitido' });
   } catch (error) {
-    console.error('❌ Error en API:', error.message);
-    console.error('Stack:', error.stack);
-    return res.status(500).json({ 
-      error: error.message,
-      details: error.stack 
-    });
+    // Log completo en servidor, pero devolver mensaje genérico al cliente
+    console.error('❌ Error en API:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }

@@ -39,6 +39,8 @@ SUPABASE_SERVICE_KEY=<pega_aqui_tu_service_key>
 
 Luego puedes probar localmente ejecutando un servidor Node.js que soporte Vercel Functions.
 
+**Importante:** No comitees `.env.local` ni ningún archivo con claves privadas. Si ya subiste una `service_role` a tu repositorio, **rótala** desde Supabase (Settings → API → Legacy keys) y reemplázala en Vercel.
+
 ## ¿Qué cambió?
 
 - ✅ `script.js`: Ya no tiene credenciales hardcodeadas

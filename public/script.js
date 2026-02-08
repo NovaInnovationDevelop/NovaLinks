@@ -31,6 +31,13 @@ const exportBtn = document.getElementById('export-btn');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
+// Región accesible para notificaciones (lectores de pantalla)
+const a11yLive = document.createElement('div');
+a11yLive.setAttribute('aria-live', 'polite');
+a11yLive.setAttribute('aria-atomic', 'true');
+a11yLive.className = 'sr-only';
+document.body.appendChild(a11yLive);
+
 // ============ FUNCIONES DE UTILIDAD ============
 
 // Validar URL
@@ -456,6 +463,15 @@ function showNotification(message, type = 'info') {
   `;
   notification.textContent = message;
   document.body.appendChild(notification);
+
+  // Announce to screen readers via aria-live region
+  try {
+    if (typeof a11yLive !== 'undefined') {
+      a11yLive.textContent = message;
+      // Clear after a short delay to allow repeated messages
+      setTimeout(() => { a11yLive.textContent = ''; }, 4000);
+    }
+  } catch (e) { /* ignore */ }
 
   setTimeout(() => {
     notification.style.animation = 'slideOut 0.3s ease-out';
