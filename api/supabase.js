@@ -2,13 +2,20 @@
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
+console.log('SUPABASE_URL:', supabaseUrl ? '✓ configurada' : '✗ NO configurada');
+console.log('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? '✓ configurada' : '✗ NO configurada');
+
 if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Error: Faltan variables de entorno');
   throw new Error('Faltan variables de entorno: SUPABASE_URL o SUPABASE_SERVICE_KEY');
 }
 
 // Helper para llamar a la API REST de Supabase
 async function supabaseApi(method, table, filter = '', body = null) {
   const url = `${supabaseUrl}/rest/v1/${table}${filter}`;
+  
+  console.log(`API Call: ${method} ${url}`);
+  
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${supabaseServiceKey}`,
@@ -22,14 +29,20 @@ async function supabaseApi(method, table, filter = '', body = null) {
 
   if (body) options.body = JSON.stringify(body);
 
-  const response = await fetch(url, options);
-  const data = await response.json();
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.message || `Error: ${response.status}`);
+    if (!response.ok) {
+      console.error(`Error ${response.status}:`, data);
+      throw new Error(data.message || `Error ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Supabase API Error:', error);
+    throw error;
   }
-
-  return data;
 }
 
 export default async function handler(req, res) {
@@ -46,6 +59,9 @@ export default async function handler(req, res) {
 
   try {
     const { action, code, url, codes } = req.body;
+    
+    console.log('Acción recibida:', action);
+    console.log('Body:', { action, code, url, codes });
 
     if (req.method === 'POST') {
       if (action === 'insert') {
@@ -108,7 +124,11 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ error: 'Método no permitido' });
   } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('❌ Error en API:', error.message);
+    console.error('Stack:', error.stack);
+    return res.status(500).json({ 
+      error: error.message,
+      details: error.stack 
+    });
   }
 }
