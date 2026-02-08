@@ -108,21 +108,23 @@ function saveLinkLocal(code, url, customAlias = null) {
 
 // ============ ELIMINAR ENLACE ============
 
-async function deleteLink(code) {
-  if (!confirm('¿Estás seguro de que deseas eliminar este enlace?')) return;
-  
+async function deleteLink(code, silent = false) {
+  if (!silent) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este enlace?')) return;
+  }
+
   try {
     await api.call('delete', { code });
     let links = JSON.parse(localStorage.getItem("myLinks")) || [];
     links = links.filter(l => l.code !== code);
     localStorage.setItem("myLinks", JSON.stringify(links));
     renderLinks();
-    
+
     // Notificación
-    showNotification('Enlace eliminado correctamente', 'success');
+    if (!silent) showNotification('Enlace eliminado correctamente', 'success');
   } catch (err) {
     console.error("Error eliminando enlace:", err);
-    showNotification('Error al eliminar enlace', 'error');
+    if (!silent) showNotification('Error al eliminar enlace', 'error');
   }
 }
 
@@ -172,14 +174,15 @@ async function renderLinks() {
     return;
   }
 
-  const { data: existingLinks } = await api.call('getByCodes', { codes });
-  const existingCodes = existingLinks ? existingLinks.map(l => l.code) : [];
+  const existingLinks = await api.call('getByCodes', { codes });
+  const existingCodes = existingLinks && Array.isArray(existingLinks) ? existingLinks.map(l => l.code) : [];
 
   const now = Date.now();
   for (let link of links) {
     // Autoeliminar si expiró o no existe en BD
     if (now > link.expiresAt || !existingCodes.includes(link.code)) {
-      await deleteLink(link.code);
+      // borrar silenciosamente (sin confirmar) cuando el link expiró o no existe en BD
+      await deleteLink(link.code, true);
       continue;
     }
 
