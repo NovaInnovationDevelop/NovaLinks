@@ -18,7 +18,9 @@ async function supabaseApi(method, table, filter = '', body = null) {
   
   const headers = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     'Authorization': `Bearer ${supabaseServiceKey}`,
+    'apikey': supabaseServiceKey,
     'Prefer': 'return=representation'
   };
 
@@ -31,11 +33,18 @@ async function supabaseApi(method, table, filter = '', body = null) {
 
   try {
     const response = await fetch(url, options);
-    const data = await response.json();
+    const text = await response.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (err) {
+      data = { raw: text };
+    }
 
     if (!response.ok) {
       console.error(`Error ${response.status}:`, data);
-      throw new Error(data.message || `Error ${response.status}`);
+      const message = (data && data.message) ? data.message : (data && data.error) ? JSON.stringify(data) : `Error ${response.status}`;
+      throw new Error(message);
     }
 
     return data;

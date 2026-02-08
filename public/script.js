@@ -6,7 +6,15 @@ const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, ...payload })
     });
-    if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+
+    if (!response.ok) {
+      const text = await response.text();
+      let data;
+      try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
+      const msg = (data && (data.error || data.message)) ? (data.error || data.message) : `HTTP ${response.status}`;
+      throw new Error(msg);
+    }
+
     return response.json();
   }
 };
