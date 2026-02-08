@@ -25,22 +25,11 @@
     <a class="btn" id="manual" style="display:none;" href="#">Abrir manual</a>
   </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-    // ---------- CONFIGURA ESTO ----------
-    const supabaseUrl = 'https://wurtrezftedbskpqsnrg.supabase.co';
-    const supabaseKey = 'sb_publishable_1iZGz2oc6E_3lTOkQAwh8A_86cgNigR';
-
-    // -------------------------------------
-
+  <script>
     const spinner = document.getElementById('spinner');
     const msgEl = document.getElementById('msg');
     const debugEl = document.getElementById('debug');
     const manualBtn = document.getElementById('manual');
-
-    // inicializa supabase
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // obtiene el código: primero prueba query param "c", si no, usa el último segmento del pathname
     function obtenerCodigo() {
@@ -62,47 +51,49 @@
       return decodeURIComponent(last).trim();
     }
 
-  async function buscarYRedirigir(code) {
-  try {
-    msgEl.textContent = 'Buscando enlace...';
-    console.log('Código recibido:', code);
+    async function buscarYRedirigir(code) {
+      try {
+        msgEl.textContent = 'Buscando enlace...';
+        console.log('Código recibido:', code);
 
-    const cleanCode = code.trim();
+        const cleanCode = code.trim();
 
-    const { data, error } = await supabase
-      .from('links')
-      .select('url, visits')
-      .eq('code', cleanCode)
-      .single();
+        // Llamar a la API para obtener el enlace
+        const response = await fetch('/api/supabase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getByCode', code: cleanCode })
+        });
 
-    console.log('Supabase response:', { data, error });
+        if (!response.ok) throw new Error('Error al obtener enlace');
+        const data = await response.json();
 
-    if (error || !data?.url) {
-      mostrarError('Enlace no encontrado.');
-      return;
+        console.log('API response:', data);
+
+        if (!data?.url) {
+          mostrarError('Enlace no encontrado.');
+          return;
+        }
+
+        // actualizar visitas llamando a la API
+        try {
+          await fetch('/api/supabase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'incrementVisits', code: cleanCode })
+          });
+        } catch (err) {
+          console.error('Error al actualizar visitas:', err);
+        }
+
+        msgEl.textContent = 'Redirigiendo...';
+        window.location.replace(data.url);
+
+      } catch (err) {
+        console.error('Error de red:', err);
+        mostrarError('Error de red. Intenta de nuevo.');
+      }
     }
-
-    // actualizar visitas directamente
-    const { data: updated, error: updateError } = await supabase
-       .from('links')
-       .update({ visits: (data.visits || 0) + 1 })
-       .eq('code', cleanCode)
-       .select('visits');
-
-    if (updateError) {
-      console.error('Error al actualizar visitas:', updateError);
-    } else {
-      console.log('Visitas actualizadas correctamente:', updated);
-    }
-
-    msgEl.textContent = 'Redirigiendo...';
-    window.location.replace(data.url);
-
-  } catch (err) {
-    console.error('Error de red:', err);
-    mostrarError('Error de red. Intenta de nuevo.');
-  }
-}
     
     function mostrarError(text) {
       spinner.style.display = 'none';

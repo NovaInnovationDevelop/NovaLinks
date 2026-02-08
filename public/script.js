@@ -1,8 +1,15 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabaseUrl = 'https://wurtrezftedbskpqsnrg.supabase.co';
-const supabaseKey = 'sb_publishable_1iZGz2oc6E_3lTOkQAwh8A_86cgNigR';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// ============ API WRAPPER ============
+const api = {
+  async call(action, payload = {}) {
+    const response = await fetch('/api/supabase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload })
+    });
+    if (!response.ok) throw new Error(`Error: ${response.statusText}`);
+    return response.json();
+  }
+};
 
 // ============ ELEMENTOS DEL DOM ============
 const input = document.getElementById('link');
@@ -97,7 +104,7 @@ async function deleteLink(code) {
   if (!confirm('¿Estás seguro de que deseas eliminar este enlace?')) return;
   
   try {
-    await supabase.from('links').delete().eq('code', code);
+    await api.call('delete', { code });
     let links = JSON.parse(localStorage.getItem("myLinks")) || [];
     links = links.filter(l => l.code !== code);
     localStorage.setItem("myLinks", JSON.stringify(links));
@@ -157,7 +164,7 @@ async function renderLinks() {
     return;
   }
 
-  const { data: existingLinks } = await supabase.from('links').select('code, visits').in('code', codes);
+  const { data: existingLinks } = await api.call('getByCodes', { codes });
   const existingCodes = existingLinks ? existingLinks.map(l => l.code) : [];
 
   const now = Date.now();
@@ -340,12 +347,12 @@ button.addEventListener('click', async () => {
     let code, exists = true;
     while (exists) {
       code = generateCode();
-      const { data } = await supabase.from('links').select('code').eq('code', code).single();
-      exists = !!data;
+      const result = await api.call('check', { code });
+      exists = result.exists;
     }
 
-    const { error } = await supabase.from('links').insert([{ code, url, visits: 0 }]);
-    if (error) throw new Error(error.message);
+    await api.call('insert', { code, url });
+
 
     const shortUrl = `${window.location.origin}/${code}`;
     resultado.innerHTML = `
