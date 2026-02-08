@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "name": "acortador-de-links",
+  "version": "1.0.0",
+  "description": "Acortador de enlaces con Supabase"
+}
